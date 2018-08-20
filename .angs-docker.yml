@@ -2,4 +2,4 @@ project: aws
 sources:
   app:
     - entrypoint_app.rb:/entrypoint
-    - .:/src
+    - app:/app
