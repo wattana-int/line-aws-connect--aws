@@ -1,0 +1,10 @@
+FROM <%= registry %>/baseimage-js8.11.1-rb2.5.1
+
+RUN pip install --upgrade pip &&\
+  pip install supervisor
+
+CMD ["ruby", "/entrypoint"]
+<%= dockerfile_entrypoint_at_commit '7170f0f34e4d6cafada7adc5ba6b0f89ac35d39c' %>
+<%= sources_for_dockerfile :app %>
+<%= git_info_for_dockerfile %>
+WORKDIR /src

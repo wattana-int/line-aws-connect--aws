@@ -1,0 +1,31 @@
+conf_desc: &conf_desc
+  conf_desc:
+    app_port:
+    pg_port:
+
+vars_desc: &vars_desc
+  vars_desc:
+  - key: PROD_USER_NAME
+    require: false
+
+  - key: PROD_USER_UID
+    require: false
+
+dev:
+  <<: *conf_desc
+  <<: *vars_desc
+  compose_files:
+  - main
+
+test:
+  <<: *conf_desc
+  <<: *vars_desc
+  compose_files:
+  - main
+
+prod:
+  <<: *conf_desc
+  <<: *vars_desc
+  compose_files:
+  - main
+  - prod
