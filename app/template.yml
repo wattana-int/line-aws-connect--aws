@@ -1,0 +1,144 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Line Connect app demo
+
+Resources:
+  DynamoDBLineAuth:
+    Type: AWS::DynamoDB::Table
+    Description: line auth info
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: uuid
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: uuid
+          KeyType: HASH
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  ManagedPolicyLineCallback:
+    Type: AWS::IAM::ManagedPolicy
+    DependsOn:
+      - DataBucket
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:PutItem
+              - dynamodb:Scan
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+            Resource: !Join [ "", [ !GetAtt DynamoDBLineAuth.Arn, "*"] ]
+
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Join [ "", [ !GetAtt DataBucket.Arn, "*"] ]
+
+  DataBucket: 
+    Type: AWS::S3::Bucket
+  
+  AuthFunctionLambdaPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    DependsOn:
+      - DynamoDBLineAuth
+      - DataBucket
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:PutItem
+              - dynamodb:Scan
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+            Resource: !Join [ "", [ !GetAtt DynamoDBLineAuth.Arn, "*"] ]
+
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Join [ "", [ !GetAtt DataBucket.Arn, "*"] ]
+
+  AuthFunctionLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - AuthFunctionLambdaPolicy
+      - CloudWatchLogLambdaPolicy
+    Properties:
+      ManagedPolicyArns: 
+        - Ref: AuthFunctionLambdaPolicy
+        - Ref: CloudWatchLogLambdaPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+  CloudWatchLogLambdaPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - arn:aws:logs:*:*:*
+              
+  LambdaFunctionLineAuth:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    DependsOn:
+      - DataBucket
+      - DynamoDBLineAuth
+    Properties:
+      CodeUri: lambda/line-auth
+      Handler: index.handler
+      Runtime: nodejs8.10
+      Timeout: 30
+      Role: !GetAtt AuthFunctionLambdaRole.Arn
+      Events:
+        AuthCallback:
+          Type: Api 
+          Properties:
+            Path: /callback
+            Method: get
+
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          MESSAGES_SIZE: "5"
+          DYNAMODB_AUTH_TABLE_NAME:
+            !Join
+            - ''
+            - - !Select
+                - "1"
+                - !Split [ 'table/', !GetAtt DynamoDBLineAuth.Arn ]
+Outputs:
+  DataBucketName: 
+    Description: Data Bucket Name
+    Value: test

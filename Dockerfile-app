@@ -1,16 +1,39 @@
 FROM <%= registry %>/baseimage-js8.11.4-rb2.5.1
 
+RUN yum clean all &&\
+  rm -rf /var/cache/yum &&\
+  yum install -y epel-release &&\
+  yum update -y &&\
+  yum install -y yum-utils \
+    device-mapper-persistent-data \
+    lvm2 &&\
+  yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo &&\
+  yum install -y docker-ce &&\
+  yum install -y python-devel &&\
+  yum clean all && rm -rf /var/cache/yum
+
 CMD ["ruby", "/entrypoint"]
 <%= dockerfile_entrypoint_at_commit '7170f0f34e4d6cafada7adc5ba6b0f89ac35d39c' %>
 
-RUN pip install --upgrade pip &&\
-  pip install supervisor
+## -python-
+RUN pip install pip==9.0.3 &&\
+  pip install --upgrade setuptools supervisor
+COPY requirements.txt /
+RUN pip install -r requirements.txt
 
-RUN npm install -g npm@6.3.0
+## -ruby-
+RUN gem install bundler --version=1.16.3
+COPY gems/Gemfile gems/Gemfile.lock /
+RUN bundle install
+
+RUN npm install -g npm@6.4.0
 COPY app/package.json app/package-lock.json /
 RUN npm install
 
 <%= sources_for_dockerfile :app %>
 <%= git_info_for_dockerfile %>
 
+ENV PATH $PATH:/app/bin
 WORKDIR /app

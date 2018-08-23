@@ -1,5 +1,6 @@
-project: aws
+project: line-connect-aws
 sources:
   app:
     - entrypoint_app.rb:/entrypoint
     - app:/app
+    - thor_tasks:/tasks

@@ -1,0 +1,27 @@
+#!/usr/bin/env coffee
+
+_ = require 'lodash'
+program = require 'commander'
+
+process.on 'unhandledRejection', (reason, p) ->
+  console.log 'Unhandled Rejection at: Promise'
+  console.log reason
+  #console.log 'reason:', reason
+
+func = require './functions/app'
+func_name = (cmd)-> "cmd_#{cmd.name().split('-').join('_')}"
+
+program
+  .command 'deploy'
+  .action (cmd)-> 
+    func[func_name cmd] cmd
+
+program
+  .command 'sam-package'
+  .action (cmd)-> func[func_name cmd] cmd
+
+program
+  .command 'appsync-schema <name>'
+  .action (name, cmd)-> func[func_name cmd] name, cmd
+    
+program.parse process.argv

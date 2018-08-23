@@ -1,3 +1,4 @@
 .dockerfile*
 .docker-file*
 .compose*
+node_modules
