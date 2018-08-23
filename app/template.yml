@@ -14,6 +14,9 @@ Parameters:
   
   DeploymentUUID:
     Type: String
+  
+  StackName:
+    Type: String
 
 Resources:
   DynamoDBLineAuth:
@@ -161,9 +164,23 @@ Resources:
   AppSyncDemoApi:
     Type: AWS::AppSync::GraphQLApi
     Properties:
-      #Name: !Sub ${StackName}
+      Name: !Sub ${StackName}
       AuthenticationType: API_KEY
-      
+  
+  AppSyncDemoApiKey:
+    Type: "AWS::AppSync::ApiKey"
+    Properties:
+      Expires: 1545586999 # Human time (GMT): Sunday, December 23, 2018 5:43:19 PM
+      ApiId: !GetAtt AppSyncDemoApi.ApiId
+        
+  AppSyncDemoSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    DependsOn:
+      - AppSyncDemoApi
+    Properties:
+      ApiId: !GetAtt AppSyncDemoApi.ApiId
+      DefinitionS3Location: !Sub s3://${DeploymentBucketName}/${DeploymentUUID}-${StackName}-appsync-demo-schema.yml
+
   AppSyncDemoAddEventDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -174,7 +191,7 @@ Resources:
   Fn::Transform:
     Name: 'AWS::Include'
     Parameters:
-      Location: !Sub s3://${DeploymentBucketName}/${DeploymentUUID}-${StackName}-appsync-noti.yml
+      Location: !Sub s3://${DeploymentBucketName}/${DeploymentUUID}-${StackName}-appsync-demo-template.yml
 
 Outputs:
   DataBucketName: 
@@ -188,7 +205,11 @@ Outputs:
   AuthAuthorizeUrl:
     Description: webpack-env--OAUTH2_authorize_url
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login_uri"
-
+  
+  WebpackAppSyncDemoApiKey:
+    Description: webpack-env--APPSYNC_api_key
+    Value: 
+      Fn::GetAtt: AppSyncDemoApiKey.ApiKey
   # --- ---
   LambdaLineAuthLineChannelID:
     Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_ID
@@ -197,3 +218,8 @@ Outputs:
   LambdaLineAuthLineChannelSecret:
     Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_SECRET
     Value: !Ref LineChannelSecret
+
+  LambdaLineAuthLineChannelSecret:
+    Description: lambda--LambdaFunctionLineAuth--env--APPSYNC_API_KEY
+    Value: 
+      Fn::GetAtt: AppSyncDemoApiKey.ApiKey

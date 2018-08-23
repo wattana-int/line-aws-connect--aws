@@ -22,56 +22,13 @@ exec      = util.promisify require('child_process').exec
 LAMBDA_BASE_DIR     = _.get(process, 'env.LAMBDA_BASE_DIR', '/app/lambda')
 APPSYNC_BASE_DIR    = _.get(process, 'env.APPSYNC_BASE_DIR', '/app/appsync')
 
+DEPLOYMENT_BUCKET_NAME = 'ans-tmp-deployment'
+
+{ upload_appsync_scheme } = require './appsync'
+
 self = 
-  samTmpPackedFile: (aUUID)-> "/tmp/#{aUUID}.yaml"
-  samDeployBucketName: (aStackName)->
-    "#{aStackName}--tmp-deployment"
-    'ans-tmp-deployment'
-
-  appsync_s3_schema: (aUUID, aStackName, aName)-> 
-    bucketName = self.samDeployBucketName aStackName
-    appsyncSchemaFile = "appsync-#{aUUID}-#{aName}"
-    "s3://#{bucketName}/#{appsyncSchemaFile}"
-
-  appsync_s3_template: (aUUID, aStackName, aName)->
-    bucketName = self.samDeployBucketName aStackName
-    appsyncTemplateFile = "#{aUUID}-#{aStackName}-appsync-#{_.lowerCase aName}.yml"
-    "s3://#{bucketName}/#{appsyncTemplateFile}"
-
-  cmd_appsync_schema: (aName)->
-    console.log '########################################################################'
-    console.log "### --- #{aName} --- ###"
-    console.log ''
-    console.log await require('/app/appsync/schema')(aName)
-    console.log '########################################################################'
-
-  upload_appsync_scheme: (aUUID, aStackName, aName)->
-    schema = await require('/app/appsync/schema')(aName)
-    name   = _.upperFirst _.camelCase Path.basename(aName)
-
-    s3file = self.appsync_s3_schema aUUID, aStackName, name
-
-    schema_file       = Path.join '/tmp', Path.basename(s3file)  
-    template_file     = Path.join aName, 'output', 'template.yml'
-    template_s3_file  = self.appsync_s3_template aUUID, aStackName, name 
-
-    console.log 'write schema to -> ', schema_file
-    await fs.writeFileAsync schema_file, schema
-    console.log "Upload schema to #{s3file}"
-
-    await do_cmd 'aws', [
-      's3'
-      'cp'
-      schema_file
-      s3file
-    ], "Uploading AppSync Scheme to S3 (#{aName})"
-    
-    await do_cmd 'aws', ['s3', 'cp', template_file, template_s3_file], "Uploading AppSync Template to S3 (#{aName})"
-
-    Promise.resolve {s3file, name}
-
   deploy_cloud_formation: (aUUID, aStackName)->
-    tmpfile = self.samTmpPackedFile aUUID
+    tmpfile = "/tmp/#{aUUID}.yml"
     params = [
       'cloudformation'
       'deploy'
@@ -86,6 +43,7 @@ self =
       "DeploymentUUID=#{aUUID}"
       "LineChannelId=#{process.env.LINE_CHANNEL_ID}"
       "LineChannelSecret=#{process.env.LINE_CHANNEL_SECRET}"
+      "DeploymentBucketName=#{DEPLOYMENT_BUCKET_NAME}"
     ]
 
     do_cmd 'aws', params, 'Deploying with CloundFormation.'
@@ -111,10 +69,10 @@ self =
     
     await self.cmd_sam_package uuid, stackName, templateFile, cmd
 
-    #appsyncs = await fg '*', { cwd: APPSYNC_BASE_DIR, onlyDirectories: true }
-    
-    #appSyncSchemas = await Promise.mapSeries appsyncs, (appsyncName)->
-    #  self.upload_appsync_scheme aUUID, aStackName, Path.join(APPSYNC_BASE_DIR, appsyncName)
+    appsyncs = await fg '*', { cwd: APPSYNC_BASE_DIR, onlyDirectories: true }
+    appSyncSchemas = await Promise.mapSeries appsyncs, (appsyncName)->
+      console.log appsyncName
+      upload_appsync_scheme uuid, stackName, DEPLOYMENT_BUCKET_NAME, Path.join(APPSYNC_BASE_DIR, appsyncName)
     
     await self.deploy_cloud_formation uuid, stackName
 
@@ -135,8 +93,8 @@ self =
 
     x
   cmd_sam_package: (aUUID, aStackName, aTemplateFile, cmd)->
-    bucketName = self.samDeployBucketName aStackName
-    tmpfile = self.samTmpPackedFile aUUID
+    bucketName = DEPLOYMENT_BUCKET_NAME
+    tmpfile = "/tmp/#{aUUID}.yml"
 
     cmd = 'sam'
     params = [

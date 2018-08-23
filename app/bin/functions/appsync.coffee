@@ -39,18 +39,15 @@ self =
     console.log await require('/app/appsync/schema')(Path.join APPSYNC_BASE_DIR, aName)
     console.log '########################################################################'
 
-  upload_scheme: (aName)->
-    uuid = sha256_uuid() if _.isEmpty aUUID
-    stackName = process.env.STACK_NAME
+  upload_appsync_scheme: (uuid, aStackName, aBucketName, aAppsyncPath)->
+    schema = await require('/app/appsync/schema') aAppsyncPath
+    name   = _.upperFirst _.camelCase Path.basename(aAppsyncPath)
 
-    schema = await require('/app/appsync/schema')(aName)
-    name   = _.upperFirst _.camelCase Path.basename(aName)
-
-    s3file = self.appsync_s3_schema aUUID, aStackName, name
+    s3file            = "s3://#{aBucketName}/#{uuid}-#{aStackName}-appsync-#{_.lowerCase Path.basename aAppsyncPath}-schema.yml"
 
     schema_file       = Path.join '/tmp', Path.basename(s3file)  
-    template_file     = Path.join aName, 'output', 'template.yml'
-    template_s3_file  = self.appsync_s3_template aUUID, aStackName, name 
+    template_file     = Path.join aAppsyncPath, 'output', 'template.yml'
+    template_s3_file  = "s3://#{aBucketName}/#{uuid}-#{aStackName}-appsync-#{_.lowerCase Path.basename aAppsyncPath}-template.yml"
 
     console.log 'write schema to -> ', schema_file
     await fs.writeFileAsync schema_file, schema
@@ -61,9 +58,9 @@ self =
       'cp'
       schema_file
       s3file
-    ], "Uploading AppSync Scheme to S3 (#{aName})"
+    ], "Uploading AppSync Scheme to S3 (#{aAppsyncPath})"
     
-    await do_cmd 'aws', ['s3', 'cp', template_file, template_s3_file], "Uploading AppSync Template to S3 (#{aName})"
+    await do_cmd 'aws', ['s3', 'cp', template_file, template_s3_file], "Uploading AppSync Template to S3 (#{aAppsyncPath})"
 
     Promise.resolve {s3file, name}
 

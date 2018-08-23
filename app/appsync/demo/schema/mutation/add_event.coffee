@@ -16,7 +16,7 @@ module.exports = #(name)->
     input:
       type: require('../../types/input/event_input')
   DataSourceName: 
-    "Fn::GetAtt": "AppSyncDemoEventDynamoDataSource.Name"
+    "Fn::GetAtt": "AppSyncDemoAddEventDataSource.Name"
   RequestMappingTemplate: """
     {
       "version": "2017-02-28",

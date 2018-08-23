@@ -8,16 +8,12 @@ AppSyncDemoMutationAddEventResolver:
     TypeName: Mutation
     FieldName: addEvent
     DataSourceName:
-      'Fn::GetAtt': AppSyncDemoEventDynamoDataSource.Name
+      'Fn::GetAtt': AppSyncDemoAddEventDataSource.Name
     RequestMappingTemplate: |-
       {
-        "version" : "2017-02-28",
-        "operation" : "PutItem",
-        "key" : {
-            "userid": $util.dynamodb.toDynamoDBJson($ctx.args.input.id),
-        },
-        "attributeValues" : $util.dynamodb.toMapValuesJson({"amount":$ctx.args.input.amount})
+        "version": "2017-02-28",
+        "payload": {
+          "data": "${context.arguments.input.data}"
+        }
       }
-    ResponseMappingTemplate: |-
-      #set( $ctx.result.id = $ctx.result.userid )
-      $util.toJson($ctx.result)
+    ResponseMappingTemplate: $util.toJson($context.result)
