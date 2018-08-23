@@ -157,8 +157,12 @@ Outputs:
     Value: !Ref DataBucket
   
   AuthCallbackApi:
-    Description: webpack-env--AWS_AUTH_auth_api_endpoint
+    Description: webpack-env--OAUTH2_callback_uri
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/callback"
+  
+  AuthAuthorizeUrl:
+    Description: webpack-env--OAUTH2_authorize_url
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login_uri"
 
   # --- ---
   LambdaLineAuthLineChannelID:
