@@ -1,0 +1,21 @@
+type Event {
+  data: String!
+}
+
+input EventInput {
+  data: String!
+}
+
+type Mutation {
+  addEvent(input: EventInput): Event
+}
+
+type Query {
+  event: Event
+}
+
+type Subscription {
+  onEvent: Event
+  @aws_subscribe(mutations: ["addEvent"])
+
+}

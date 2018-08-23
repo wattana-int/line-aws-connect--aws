@@ -1,0 +1,19 @@
+#!/usr/bin/env coffee
+
+_ = require 'lodash'
+Path = require 'path'
+program = require 'commander'
+
+process.on 'unhandledRejection', (reason, p) ->
+  console.log 'Unhandled Rejection at: Promise'
+  console.log reason
+  #console.log 'reason:', reason
+
+func = require "./functions/#{Path.basename __filename}"
+func_name = (cmd)-> "cmd_#{cmd.name().split('-').join('_')}"
+
+program
+  .command 'schema <name>'
+  .action (name, cmd)-> func[func_name cmd] name, cmd
+    
+program.parse process.argv

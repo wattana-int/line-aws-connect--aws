@@ -9,6 +9,12 @@ Parameters:
   LineChannelSecret:
     Type: String
 
+  DeploymentBucketName:
+    Type: String
+  
+  DeploymentUUID:
+    Type: String
+
 Resources:
   DynamoDBLineAuth:
     Type: AWS::DynamoDB::Table
@@ -151,6 +157,25 @@ Resources:
             - - !Select
                 - "1"
                 - !Split [ 'table/', !GetAtt DynamoDBLineAuth.Arn ]
+  # -----
+  AppSyncDemoApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      #Name: !Sub ${StackName}
+      AuthenticationType: API_KEY
+      
+  AppSyncDemoAddEventDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt AppSyncDemoApi.ApiId
+      Name: SendMesage
+      Type: NONE
+  
+  Fn::Transform:
+    Name: 'AWS::Include'
+    Parameters:
+      Location: !Sub s3://${DeploymentBucketName}/${DeploymentUUID}-${StackName}-appsync-noti.yml
+
 Outputs:
   DataBucketName: 
     Description: Data Bucket Name
