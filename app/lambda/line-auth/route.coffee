@@ -3,7 +3,7 @@ self =
   klass: ({path})->
     name = path
     name = path.slice(1) if path.startsWith '/'
-    m = require "./controllers/#{name}"
+    m = require "./controllers/#{name}_controller"
     new m()
 
   select: (event)->

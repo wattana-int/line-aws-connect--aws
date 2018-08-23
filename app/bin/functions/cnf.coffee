@@ -84,6 +84,8 @@ self =
       '--parameter-overrides'
       "StackName=#{aStackName}"
       "DeploymentUUID=#{aUUID}"
+      "LineChannelId=#{process.env.LINE_CHANNEL_ID}"
+      "LineChannelSecret=#{process.env.LINE_CHANNEL_SECRET}"
     ]
 
     do_cmd 'aws', params, 'Deploying with CloundFormation.'

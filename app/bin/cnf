@@ -1,6 +1,7 @@
 #!/usr/bin/env coffee
 
 _ = require 'lodash'
+Path = require 'path'
 program = require 'commander'
 
 process.on 'unhandledRejection', (reason, p) ->
@@ -8,7 +9,7 @@ process.on 'unhandledRejection', (reason, p) ->
   console.log reason
   #console.log 'reason:', reason
 
-func = require './functions/app'
+func = require "./functions/#{Path.basename __filename}"
 func_name = (cmd)-> "cmd_#{cmd.name().split('-').join('_')}"
 
 program

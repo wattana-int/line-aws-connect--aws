@@ -2,6 +2,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Line Connect app demo
+Parameters:
+  LineChannelId:
+    Type: String
+  
+  LineChannelSecret:
+    Type: String
 
 Resources:
   DynamoDBLineAuth:
@@ -110,7 +116,7 @@ Resources:
               - logs:PutLogEvents
             Resource:
               - arn:aws:logs:*:*:*
-              
+
   LambdaFunctionLineAuth:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     DependsOn:
@@ -128,10 +134,17 @@ Resources:
           Properties:
             Path: /callback
             Method: get
+        LoginUri:
+          Type: Api
+          Properties:
+            Path: /login_uri
+            Method: get
 
       Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
         Variables:
-          MESSAGES_SIZE: "5"
+          DEBUG: '*simple-oauth2*'
+          LINE_CHANNEL_ID: !Ref LineChannelId
+          LINE_CHANNEL_SECRET: !Ref LineChannelSecret
           DYNAMODB_AUTH_TABLE_NAME:
             !Join
             - ''
@@ -141,4 +154,17 @@ Resources:
 Outputs:
   DataBucketName: 
     Description: Data Bucket Name
-    Value: test
+    Value: !Ref DataBucket
+  
+  AuthCallbackApi:
+    Description: webpack-env--AWS_AUTH_auth_api_endpoint
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/callback"
+
+  # --- ---
+  LambdaLineAuthLineChannelID:
+    Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_ID
+    Value: !Ref LineChannelId
+
+  LambdaLineAuthLineChannelSecret:
+    Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_SECRET
+    Value: !Ref LineChannelSecret

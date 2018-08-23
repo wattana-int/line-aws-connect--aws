@@ -3,7 +3,7 @@ compose do |c, run|
 
   c.service :app do |s|
     s.environments STACK_NAME: stack_name
-    s.environment_vars :NODE_ENV, :SAM, :AWS
+    s.environment_vars :NODE_ENV, :SAM, :AWS, :LINE
     s.source_code :app
 
     s.named_volume app_node_modules: '/app/node_modules'
