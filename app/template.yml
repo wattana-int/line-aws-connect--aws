@@ -151,7 +151,8 @@ Resources:
 
       Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
         Variables:
-          DEBUG: '*simple-oauth2*'
+          APPSYNC_API_KEY: !GetAtt AppSyncDemoApiKey.ApiKey
+          APPSYNC_API_ENDPOINT: !GetAtt AppSyncDemoApi.GraphQLUrl 
           LINE_CHANNEL_ID: !Ref LineChannelId
           LINE_CHANNEL_SECRET: !Ref LineChannelSecret
           DYNAMODB_AUTH_TABLE_NAME:
@@ -207,9 +208,17 @@ Outputs:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login_uri"
   
   WebpackAppSyncDemoApiKey:
-    Description: webpack-env--APPSYNC_api_key
+    Description: webpack-env--APPSYNC_aws_appsync_apiKey
     Value: 
       Fn::GetAtt: AppSyncDemoApiKey.ApiKey
+
+  WebpackEnvAwsAppsyncRegion:
+    Description: webpack-env--APPSYNC_aws_appsync_region
+    Value: !Ref AWS::Region
+
+  WebpackEnvAwsAppsyncGraphqlEndpoint:
+    Description: webpack-env--APPSYNC_aws_appsync_graphqlEndpoint
+    Value: !GetAtt AppSyncDemoApi.GraphQLUrl
   # --- ---
   LambdaLineAuthLineChannelID:
     Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_ID
@@ -219,7 +228,10 @@ Outputs:
     Description: lambda--LambdaFunctionLineAuth--env--LINE_CHANNEL_SECRET
     Value: !Ref LineChannelSecret
 
-  LambdaLineAuthLineChannelSecret:
+  LambdaLineAuthAppsyncApiKey:
     Description: lambda--LambdaFunctionLineAuth--env--APPSYNC_API_KEY
-    Value: 
-      Fn::GetAtt: AppSyncDemoApiKey.ApiKey
+    Value: !GetAtt AppSyncDemoApiKey.ApiKey
+  
+  LambdaLineAuthAppsyncApiEndpoint:
+    Description: lambda--LambdaFunctionLineAuth--env--APPSYNC_API_ENDPOINT
+    Value: !GetAtt AppSyncDemoApi.GraphQLUrl

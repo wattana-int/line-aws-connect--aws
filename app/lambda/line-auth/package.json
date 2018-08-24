@@ -10,9 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "atob": "^2.1.2",
     "axios": "^0.18.0",
     "bluebird": "^3.5.1",
+    "btoa": "^1.2.1",
     "coffeescript": "^2.3.1",
+    "graphql-request": "^1.8.2",
     "lodash": "^4.17.10",
     "sha256": "^0.2.0",
     "simple-oauth2": "^2.2.1",
