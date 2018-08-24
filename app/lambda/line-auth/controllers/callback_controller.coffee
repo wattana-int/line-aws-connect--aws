@@ -13,6 +13,6 @@ class Klass extends ApplicationController
     console.log '- access token -'
     console.log accessToken
     await sendEvent JSON.stringify accessToken
-    "Thank you."
+    "Done."
 
 module.exports = Klass
