@@ -7,14 +7,13 @@ btoa      = require 'btoa'
 
 APPSYNC_API_ENDPOINT  = process.env.APPSYNC_API_ENDPOINT
 APPSYNC_API_KEY       = process.env.APPSYNC_API_KEY
-console.log process.env
+
 self =
   sha256_uuid: -> sha256 uuidv4()
   getRedirectUri: (event)->
     "https://#{event.headers.Host}/Prod/callback"
 
   sendEvent: (aData)->
-    console.log APPSYNC_API_ENDPOINT
     data = btoa aData
     query = """
       mutation ($data: String!){
