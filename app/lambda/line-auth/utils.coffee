@@ -11,7 +11,9 @@ APPSYNC_API_KEY       = process.env.APPSYNC_API_KEY
 self =
   sha256_uuid: -> sha256 uuidv4()
   getRedirectUri: (event)->
-    "https://#{event.headers.Host}/Prod/callback"
+    host = _.get event, 'headers.Host'
+    host = _.get event, 'headers.host' if _.isEmpty host
+    "https://#{host}/Prod/callback"
 
   sendEvent: (aData)->
     data = btoa aData

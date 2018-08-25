@@ -133,11 +133,17 @@ Resources:
       - DynamoDBLineAuth
     Properties:
       CodeUri: lambda/line-auth
-      Handler: index.handler
+      #Handler: index.handler
+      Handler: lambda.handler
       Runtime: nodejs8.10
       Timeout: 30
       Role: !GetAtt AuthFunctionLambdaRole.Arn
       Events:
+        Assets:
+          Type: Api
+          Properties:
+            Path: /assets/{name}
+            Method: get
         AuthCallback:
           Type: Api 
           Properties:
