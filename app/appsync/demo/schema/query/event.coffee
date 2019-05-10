@@ -5,5 +5,6 @@
   GraphQLList
 } = require 'graphql'
 
-module.exports = #->
+module.exports = {
   type: require('../../types/event')
+}

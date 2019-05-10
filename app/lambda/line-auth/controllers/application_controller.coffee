@@ -2,7 +2,7 @@
 
 class ApplicationController
   sha256_uuid: sha256_uuid
-  index: (event)->
+  index: (event) ->
     console.log ' -- application index --'
     console.log event
     {}

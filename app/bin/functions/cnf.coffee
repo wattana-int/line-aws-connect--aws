@@ -13,7 +13,7 @@ fg        = require 'fast-glob'
 exec      = util.promisify require('child_process').exec
 
 
-{ 
+{
   table
 } =  require 'table'
 
@@ -26,8 +26,8 @@ DEPLOYMENT_BUCKET_NAME = 'ans-tmp-deployment'
 
 { upload_appsync_scheme } = require './appsync'
 
-self = 
-  deploy_cloud_formation: (aUUID, aStackName)->
+self = {
+  deploy_cloud_formation: (aUUID, aStackName) ->
     tmpfile = "/tmp/#{aUUID}.yml"
     params = [
       'cloudformation'
@@ -48,7 +48,7 @@ self =
 
     do_cmd 'aws', params, 'Deploying with CloundFormation.'
 
-  validate_template: (template_file)->
+  validate_template: (template_file) ->
     cmd = 'aws'
     params = [
       'cloudformation'
@@ -58,7 +58,7 @@ self =
     ]
     do_cmd cmd, params, 'Validating Template File'
      
-  cmd_deploy: (cmd)->
+  cmd_deploy: (cmd) ->
     uuid = sha256_uuid()
     stackName = process.env.STACK_NAME
     templateFile = '/app/template.yml'
@@ -70,9 +70,11 @@ self =
     await self.cmd_sam_package uuid, stackName, templateFile, cmd
 
     appsyncs = await fg '*', { cwd: APPSYNC_BASE_DIR, onlyDirectories: true }
-    appSyncSchemas = await Promise.mapSeries appsyncs, (appsyncName)->
+    appSyncSchemas = await Promise.mapSeries appsyncs, (appsyncName) ->
       console.log appsyncName
-      upload_appsync_scheme uuid, stackName, DEPLOYMENT_BUCKET_NAME, Path.join(APPSYNC_BASE_DIR, appsyncName)
+      upload_appsync_scheme(
+        uuid, stackName, DEPLOYMENT_BUCKET_NAME, Path.join(APPSYNC_BASE_DIR, appsyncName)
+      )
     
     await self.deploy_cloud_formation uuid, stackName
 
@@ -80,9 +82,9 @@ self =
 
     dirs = await fg '*/package.json', { cwd: LAMBDA_BASE_DIR, onlyDirectories: false }
     console.log dirs
-    lambdas = dirs.map (e)-> Path.dirname e
+    lambdas = dirs.map (e) -> Path.dirname e
 
-    x = await Promise.mapSeries lambdas, (lambda)->
+    x = await Promise.mapSeries lambdas, (lambda) ->
       node_modules_dir = Path.join LAMBDA_BASE_DIR, lambda, 'node_modules'
       cmd = "rm -rf #{Path.join node_modules_dir, '*'}"
       console.log cmd
@@ -92,14 +94,14 @@ self =
       lambda
 
     x
-  cmd_sam_package: (aUUID, aStackName, aTemplateFile, cmd)->
+  cmd_sam_package: (aUUID, aStackName, aTemplateFile, cmd) ->
     bucketName = DEPLOYMENT_BUCKET_NAME
     tmpfile = "/tmp/#{aUUID}.yml"
 
     cmd = 'sam'
     params = [
       'package',
-      '--template-file', 
+      '--template-file',
       aTemplateFile,
       '--output-template-file',
       tmpfile,
@@ -107,5 +109,5 @@ self =
       bucketName
     ]
     do_cmd cmd, params, 'Packing Lambda Function'
-        
+}
 module.exports = self

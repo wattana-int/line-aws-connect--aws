@@ -17,52 +17,58 @@ fsx = require 'fs-extra'
   introspectionFromSchema
 } = require 'graphql'
 
-removeAwsSubscriptionTemplateDummy = (str)->
+removeAwsSubscriptionTemplateDummy = (str) ->
   str = str.replace /type\W.*\s.*@aws_subscribe.*\s*.*}.*\s*\s\s/g, ''
   str.replace /"""/g, '#'
 
-fillMappingTemplates = (aMappingTemplates, aType, aField, aMappingType, aTemplate)->
-  if aTemplate 
+fillMappingTemplates = (aMappingTemplates, aType, aField, aMappingType, aTemplate) ->
+  if aTemplate
     _.set aMappingTemplates, "#{aType}.#{aField}.#{aMappingType}", aTemplate
     
-getQueries = (aMappingTemplates, filesPath)->
+getQueries = (aMappingTemplates, filesPath) ->
   ret = {}
 
-  files = await new Promise (resolve, reject)-> 
-    glob filesPath, (err, files)-> 
+  files = await new Promise (resolve, reject) ->
+    glob filesPath, (err, files) ->
       if err then reject(err) else resolve(files)
 
-  files = files.filter (f)-> Path.extname(f) in ['.coffee', '.js']
-  files = files.map (file)->
-    name    = if file.endsWith '.coffee' 
+  files = files.filter (f) -> Path.extname(f) in ['.coffee', '.js']
+  files = files.map (file) ->
+    name    = if file.endsWith '.coffee'
                 _.camelCase Path.basename file, '.coffee'
               else
                 _.camelCase Path.basename file, '.js'
 
     module  = require(file) # name
 
-    typeName = Path.basename Path.dirname file 
+    typeName = Path.basename Path.dirname file
 
-    fillMappingTemplates aMappingTemplates, (_.upperFirst typeName), name, 'DataSourceName', module.DataSourceName
-    fillMappingTemplates aMappingTemplates, (_.upperFirst typeName), name, 'RequestMappingTemplate', module.RequestMappingTemplate
-    fillMappingTemplates aMappingTemplates, (_.upperFirst typeName), name, 'ResponseMappingTemplate', module.ResponseMappingTemplate
+    fillMappingTemplates(aMappingTemplates, _.upperFirst(typeName),
+      name, 'DataSourceName', module.DataSourceName
+    )
+    fillMappingTemplates(aMappingTemplates, _.upperFirst(typeName),
+      name, 'RequestMappingTemplate', module.RequestMappingTemplate)
+
+    fillMappingTemplates(aMappingTemplates, _.upperFirst(typeName),
+      name, 'ResponseMappingTemplate', module.ResponseMappingTemplate)
     
-    _.extend {name},
+    _.extend { name }, {
       module: module
+    }
   
   files = _.keyBy files, 'name'
-  _.mapValues files, (v)-> v.module
+  _.mapValues files, (v) -> v.module
 
-getSubscriptions = (aMappingTemplates, filesPath, mutations)->
+getSubscriptions = (aMappingTemplates, filesPath, mutations) ->
   ret = {}
   
-  files = await new Promise (resolve, reject)-> 
-    glob filesPath, (err, files)-> 
+  files = await new Promise (resolve, reject) ->
+    glob filesPath, (err, files) ->
       if err then reject(err) else resolve(files)
 
-  files = files.filter (f)-> Path.extname(f) in ['.coffee', '.js']
-  files = files.map (file)->
-    name    = if file.endsWith '.coffee' 
+  files = files.filter (f) -> Path.extname(f) in ['.coffee', '.js']
+  files = files.map (file) ->
+    name    = if file.endsWith '.coffee'
                 _.camelCase Path.basename file, '.coffee'
               else
                 _.camelCase Path.basename file, '.js'
@@ -70,28 +76,32 @@ getSubscriptions = (aMappingTemplates, filesPath, mutations)->
     module = require(file) name
     
     if _.isArray module.aws_mutations
-      aws = module.aws_mutations.map (e)->
+      aws = module.aws_mutations.map (e) ->
         require Path.join(Path.dirname(file), "../mutation/#{e}")
 
         mutationName = _.camelCase Path.basename e
-        
-        mutation: mutations[mutationName]
-        mutationName: mutationName
+        {
+          mutation: mutations[mutationName]
+          mutationName: mutationName
+        }
 
-      mutationNames = aws.map (e)-> e.mutationName
+      mutationNames = aws.map (e) -> e.mutationName
                          .join '", "'
     
     { name, module }
     
   files = _.keyBy files, 'name'
-  _.mapValues files, (v)-> v.module  
+  _.mapValues files, (v) -> v.module
   
-#module.exports = ->
-fetchSchema = (dir)->
+fetchSchema = (dir) ->
   mappingTemplates = {}
-  queries       = await getQueries        mappingTemplates, Path.join(dir, 'schema/query/*')
-  mutations     = await getQueries        mappingTemplates, Path.join(dir, 'schema/mutation/*')
-  subscriptions = await getSubscriptions  mappingTemplates, Path.join(dir, 'schema/subscription/*'), mutations
+  queries       = await getQueries(
+    mappingTemplates, Path.join(dir, 'schema/query/*')
+  )
+  mutations     = await getQueries(mappingTemplates, Path.join(dir, 'schema/mutation/*'))
+  subscriptions = await getSubscriptions(
+    mappingTemplates, Path.join(dir, 'schema/subscription/*'), mutations
+  )
   # console.log '--- queries ---------'
   # console.log queries
   # console.log '--- mutations -------'
@@ -99,22 +109,26 @@ fetchSchema = (dir)->
   # console.log '--- subscriptions ---'
   # console.log subscriptions
   # console.log '---------------------'
-  schema = new GraphQLSchema
-    query: new GraphQLObjectType
+  schema = new GraphQLSchema {
+    query: new GraphQLObjectType {
       name: 'Query'
       fields: queries
+    }
 
-    mutation: new GraphQLObjectType
+    mutation: new GraphQLObjectType {
       name: 'Mutation'
       fields: mutations
+    }
 
-    subscription: new GraphQLObjectType
+    subscription: new GraphQLObjectType {
       name: 'Subscription'
       fields: subscriptions
+    }
+  }
 
   { schema, mappingTemplates }
 
-writeMappingTemplates = (aPath, aMappingTemplate)->
+writeMappingTemplates = (aPath, aMappingTemplate) ->
   ###
     AppSyncMutationSendMessageResolver:
     Type: AWS::AppSync::Resolver
@@ -143,25 +157,28 @@ writeMappingTemplates = (aPath, aMappingTemplate)->
 
   for eachType, fields of aMappingTemplate
     for eachField, types of fields
-      resolverName = "AppSync#{appSyncName}#{_.upperFirst eachType}#{_.upperFirst eachField}Resolver"
+      resolverName =
+        "AppSync#{appSyncName}#{_.upperFirst eachType}#{_.upperFirst eachField}Resolver"
        
-      _.set resolvers, resolverName,
+      _.set resolvers, resolverName, {
           Type: "AWS::AppSync::Resolver"
           DependsOn: ["AppSync#{appSyncName}Schema"]
-          Properties:
-            ApiId: 
+          Properties: {
+            ApiId: {
               "Fn::GetAtt": "AppSync#{appSyncName}Api.ApiId"
+            }
             TypeName: eachType
             FieldName: eachField
-            
+          }
+      }
       for eachMappingType, template of types
         _.set resolvers, "#{resolverName}.Properties.#{eachMappingType}", template
         
-  templateData = yaml.safeDump resolvers, noCompatMode: true
+  templateData = yaml.safeDump resolvers, { noCompatMode: true }
    
   fs.writeFileSync templateFile, templateData
 
-module.exports = (path)->
+module.exports = (path) ->
   { schema, mappingTemplates } = await fetchSchema path
   
   sdlString = removeAwsSubscriptionTemplateDummy printSchema schema
@@ -174,10 +191,11 @@ module.exports = (path)->
   subscriptionEdit = {}
   for eachSubscriptionName, data of subscriptions
     if _.isArray(data.aws_mutations) and !_.isEmpty(data.aws_mutations)
-      mutationNames = _(data.aws_mutations).map (e)-> _.camelCase e
+      mutationNames = _(data.aws_mutations).map (e) -> _.camelCase e
                                            .value()
 
-      subscriptionEdit[eachSubscriptionName] = "@aws_subscribe(mutations: [\"#{mutationNames.join(', ')}\"])"
+      subscriptionEdit[eachSubscriptionName] =
+        "@aws_subscribe(mutations: [\"#{mutationNames.join(', ')}\"])"
   
   edited = []
   lines = []

@@ -9,7 +9,7 @@ express = require 'express'
 app = express()
 
 app.set 'view engine', 'pug', { pretty: true }
-app.locals.pretty = true;
+app.locals.pretty = true
 console.log('--> ', __dirname)
 
 app.use assets
@@ -26,13 +26,13 @@ Oauth2Model = require './models/oauth2'
 app.get '/', (req, res) ->
   res.render 'index', { title: 'Line Auth ..', user: '' }
 
-app.get '/login_uri', (req, res)->
+app.get '/login_uri', (req, res) ->
   redirect_uri = getRedirectUri req
-  authorizationUri = Oauth2Model.getAuthorizationUri {redirect_uri}
+  authorizationUri = Oauth2Model.getAuthorizationUri { redirect_uri }
 
   res.json { authorizationUri }
 
-app.get '/callback', (req, res)->
+app.get '/callback', (req, res) ->
 
   redirect_uri = getRedirectUri req
 
@@ -47,7 +47,7 @@ app.get '/callback', (req, res)->
     res.render 'callback', { title: 'Line Auth ..', user: '' }
   catch e
     error = e.message
-    res.json {redirect_uri, error}
+    res.json { redirect_uri, error }
 
   
 

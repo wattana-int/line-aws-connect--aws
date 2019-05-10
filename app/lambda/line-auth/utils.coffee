@@ -8,14 +8,14 @@ btoa      = require 'btoa'
 APPSYNC_API_ENDPOINT  = process.env.APPSYNC_API_ENDPOINT
 APPSYNC_API_KEY       = process.env.APPSYNC_API_KEY
 
-self =
+self = {
   sha256_uuid: -> sha256 uuidv4()
-  getRedirectUri: (event)->
+  getRedirectUri: (event) ->
     host = _.get event, 'headers.Host'
     host = _.get event, 'headers.host' if _.isEmpty host
     "https://#{host}/Prod/callback"
 
-  sendEvent: (aData)->
+  sendEvent: (aData) ->
     data = btoa aData
     query = """
       mutation ($data: String!){
@@ -24,10 +24,12 @@ self =
         }
       }
     """
-    client = new GraphQLClient APPSYNC_API_ENDPOINT,
-      headers:
+    client = new GraphQLClient APPSYNC_API_ENDPOINT, {
+      headers: {
         'x-api-key': APPSYNC_API_KEY
+      }
+    }
 
     client.request query, { data }
-
+}
 module.exports = _.extend { _ }, self

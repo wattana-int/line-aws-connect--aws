@@ -9,8 +9,11 @@ CONST = require '../../const'
   GraphQLString
 } = require 'graphql'
 
-module.exports = new GraphQLObjectType
+module.exports = new GraphQLObjectType {
   name: CONST.typeName __filename
-  fields: ->
-    data:
+  fields: -> {
+    data: {
       type: new GraphQLNonNull GraphQLString
+    }
+  }
+}

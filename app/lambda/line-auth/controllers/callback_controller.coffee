@@ -5,7 +5,7 @@ ApplicationController = require './application_controller'
 Oauth2Model = require '../models/oauth2'
 
 class Klass extends ApplicationController
-  index: (event)->
+  index: (event) ->
     redirect_uri = getRedirectUri event
     { queryStringParameters } = event
     { code, state } = queryStringParameters

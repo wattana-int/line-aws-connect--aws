@@ -13,7 +13,7 @@ fg        = require 'fast-glob'
 exec      = util.promisify require('child_process').exec
 
 
-{ 
+{
   table
 } =  require 'table'
 
@@ -21,33 +21,39 @@ exec      = util.promisify require('child_process').exec
 
 APPSYNC_BASE_DIR    = _.get(process, 'env.APPSYNC_BASE_DIR', '/app/appsync')
 
-self = 
-  appsync_s3_schema: (aUUID, aStackName, aName)-> 
+self = {
+  appsync_s3_schema: (aUUID, aStackName, aName) ->
     bucketName = self.samDeployBucketName aStackName
     appsyncSchemaFile = "appsync-#{aUUID}-#{aName}"
     "s3://#{bucketName}/#{appsyncSchemaFile}"
 
-  appsync_s3_template: (aUUID, aStackName, aName)->
+  appsync_s3_template: (aUUID, aStackName, aName) ->
     bucketName = self.samDeployBucketName aStackName
     appsyncTemplateFile = "#{aUUID}-#{aStackName}-appsync-#{_.lowerCase aName}.yml"
     "s3://#{bucketName}/#{appsyncTemplateFile}"
 
-  cmd_schema: (aName)->
+  cmd_schema: (aName) ->
     console.log '########################################################################'
     console.log "### --- #{aName} --- ###"
     console.log ''
     console.log await require('/app/appsync/schema')(Path.join APPSYNC_BASE_DIR, aName)
     console.log '########################################################################'
 
-  upload_appsync_scheme: (uuid, aStackName, aBucketName, aAppsyncPath)->
+  upload_appsync_scheme: (uuid, aStackName, aBucketName, aAppsyncPath) ->
     schema = await require('/app/appsync/schema') aAppsyncPath
     name   = _.upperFirst _.camelCase Path.basename(aAppsyncPath)
 
-    s3file            = "s3://#{aBucketName}/#{uuid}-#{aStackName}-appsync-#{_.lowerCase Path.basename aAppsyncPath}-schema.yml"
+    s3file =
+      "s3://#{aBucketName}/#{uuid}-#{aStackName}" +
+      "-appsync-#{_.lowerCase Path.basename aAppsyncPath}-schema.yml"
 
-    schema_file       = Path.join '/tmp', Path.basename(s3file)  
-    template_file     = Path.join aAppsyncPath, 'output', 'template.yml'
-    template_s3_file  = "s3://#{aBucketName}/#{uuid}-#{aStackName}-appsync-#{_.lowerCase Path.basename aAppsyncPath}-template.yml"
+    schema_file =
+      Path.join '/tmp', Path.basename(s3file)
+
+    template_file = Path.join aAppsyncPath, 'output', 'template.yml'
+    template_s3_file =
+      "s3://#{aBucketName}/#{uuid}-#{aStackName}" +
+      "-appsync-#{_.lowerCase Path.basename aAppsyncPath}-template.yml"
 
     console.log 'write schema to -> ', schema_file
     await fs.writeFileAsync schema_file, schema
@@ -60,8 +66,11 @@ self =
       s3file
     ], "Uploading AppSync Scheme to S3 (#{aAppsyncPath})"
     
-    await do_cmd 'aws', ['s3', 'cp', template_file, template_s3_file], "Uploading AppSync Template to S3 (#{aAppsyncPath})"
-
-    Promise.resolve {s3file, name}
-
+    await do_cmd(
+      'aws',
+      ['s3', 'cp', template_file, template_s3_file],
+      "Uploading AppSync Template to S3 (#{aAppsyncPath})"
+    )
+    Promise.resolve { s3file, name }
+}
 module.exports = self

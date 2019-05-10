@@ -1,6 +1,6 @@
-{ 
+{
   _
-  inputTypeName 
+  inputTypeName
 } =  require '../../../const'
 
 {
@@ -10,13 +10,16 @@
   GraphQLInputObjectType
 } = require 'graphql'
 
-module.exports = #(name)->
+module.exports = {
   type: require('../../types/event')
-  args:
-    input:
+  args: {
+    input: {
       type: require('../../types/input/event_input')
-  DataSourceName: 
+    }
+  }
+  DataSourceName: {
     "Fn::GetAtt": "AppSyncDemoAddEventDataSource.Name"
+  }
   RequestMappingTemplate: """
     {
       "version": "2017-02-28",
@@ -28,3 +31,4 @@ module.exports = #(name)->
   ResponseMappingTemplate: """
     $util.toJson($context.result)
   """
+}
