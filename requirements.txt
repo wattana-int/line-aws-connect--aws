@@ -48,6 +48,6 @@ supervisor==3.3.4
 urlgrabber==3.10
 urllib3==1.23
 websocket-client==0.48.0
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 whichcraft==0.4.1
 yum-metadata-parser==1.1.4
