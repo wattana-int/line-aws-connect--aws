@@ -12,7 +12,7 @@
   "dependencies": {
     "atob": "^2.1.2",
     "aws-serverless-express": "^3.3.5",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "bluebird": "^3.5.1",
     "btoa": "^1.2.1",
     "coffeescript": "^2.3.1",
