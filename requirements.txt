@@ -46,7 +46,7 @@ s3transfer==0.1.13
 six==1.11.0
 supervisor==3.3.4
 urlgrabber==3.10
-urllib3==1.23
+urllib3==1.26.5
 websocket-client==0.48.0
 Werkzeug==0.14.1
 whichcraft==0.4.1
